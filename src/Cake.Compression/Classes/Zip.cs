@@ -132,6 +132,53 @@ namespace Cake.Compression.Classes
                 }
             }
         }
+        public override void UncompressToMultiple(FilePath filePath, IEnumerable<DirectoryPath> outputPath)
+        {
+            Precondition.IsNotNull(filePath, nameof(filePath));
+            Precondition.IsNotNull(outputPath, nameof(outputPath));
+
+            // Make root path and output file path absolute.
+            filePath = filePath.MakeAbsolute(environment);
+
+            var file = fileSystem.GetFile(filePath);
+
+
+            using (Stream inputStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (ZipFile zipFile = new ZipFile(inputStream))
+            {
+                foreach (ZipEntry zipEntry in zipFile)
+                {
+                    if (!zipEntry.IsFile)
+                    {
+                        continue; // Ignore directories
+                    }
+
+                    string entryFileName = zipEntry.Name;
+
+                    byte[] buffer = new byte[4096]; // 4K is optimum
+                    Stream zipStream = zipFile.GetInputStream(zipEntry);
+                    foreach (var path in outputPath)
+                    {
+                        var p = path.MakeAbsolute(environment);
+
+                        log.Verbose("Uncompress Zip file {0} to {1}", filePath.FullPath, p.FullPath);
+                        string fullZipToPath = System.IO.Path.Combine(path.FullPath, entryFileName);
+                        string directoryName = System.IO.Path.GetDirectoryName(fullZipToPath);
+
+                        if (directoryName.Length > 0)
+                        {
+                            Directory.CreateDirectory(directoryName);
+                        }
+
+                        using (FileStream streamWriter = File.Create(fullZipToPath))
+                        {
+                            StreamUtils.Copy(zipStream, streamWriter, buffer);
+                        }
+                    }
+
+                }
+            }
+        }
         #endregion
     }
 }

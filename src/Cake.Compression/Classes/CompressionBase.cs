@@ -70,6 +70,7 @@ namespace Cake.Compression.Classes
         /// <param name="filePath">Archive to uncompress.</param>
         /// <param name="outputPath">Output path to uncompress into.</param>
         public abstract void Uncompress(FilePath filePath, DirectoryPath outputPath);
+        public abstract void UncompressToMultiple(FilePath filePath, IEnumerable<DirectoryPath> outputPath);
         #endregion
 
         #region Protected Methods

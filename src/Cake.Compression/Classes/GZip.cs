@@ -105,6 +105,32 @@ namespace Cake.Compression.Classes
                 archive.Close();
             }
         }
+        public override void UncompressToMultiple(FilePath filePath, IEnumerable<DirectoryPath> outputPath)
+        {
+            Precondition.IsNotNull(filePath, nameof(filePath));
+            Precondition.IsNotNull(outputPath, nameof(outputPath));
+
+            // Make root path and output file path absolute.
+            filePath = filePath.MakeAbsolute(environment);
+
+            var file = fileSystem.GetFile(filePath);
+
+
+            using (Stream inputStream = file.Open(FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (Stream gzipInputStream = new GZipInputStream(inputStream))
+            {
+                TarArchive archive = TarArchive.CreateInputTarArchive(gzipInputStream);
+                foreach (var path in outputPath)
+                {
+
+                    var p = path.MakeAbsolute(environment);
+                    log.Verbose("Uncompress GZip file {0} to {1}", filePath.FullPath, p.FullPath);
+                    archive.ExtractContents(p.FullPath);
+
+                }
+                archive.Close();
+            }
+        }
         #endregion
     }
 }
